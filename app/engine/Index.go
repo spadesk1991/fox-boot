@@ -22,7 +22,7 @@ func NewEngine(prefix string) *Engine {
 	e := gin.Default()
 	e.NoMethod(middleware.HandleNotFound)
 	e.NoRoute(middleware.HandleNotFound)
-	e.Use(middleware.Logger(), middleware.ErrHandler())
+	e.Use(middleware.ErrHandler())
 	e.GET("/check", func(c *gin.Context) {
 		c.String(http.StatusOK, "ok")
 	})

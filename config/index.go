@@ -25,11 +25,12 @@ func init() {
 	if goEnv == "" {
 		goEnv = "default"
 	}
-	yamlFile, err := ioutil.ReadFile(fmt.Sprintf("./config/%s.yaml", goEnv))
+	//dir, _ := os.Getwd()
+	yamlFile, err := ioutil.ReadFile(fmt.Sprintf("config/%s.yaml", goEnv))
 	if err != nil {
 		panic(err)
 	}
-	Cfg = &Config{}
+	Cfg = new(Config)
 	err = yaml.Unmarshal(yamlFile, Cfg)
 	if err != nil {
 		panic(err)

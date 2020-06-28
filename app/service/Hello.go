@@ -15,6 +15,7 @@ func (s HelloService) CreateHello() (err error) {
 			Name: "张三",
 			Sex:  13,
 		}
+		//tx.Exec()
 		if e = tx.Create(&user).Error; e != nil {
 			return
 		}

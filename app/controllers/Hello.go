@@ -27,6 +27,7 @@ func (u *HelloController) Say() gin.HandlerFunc {
 		})
 	}
 }
+
 func (u *HelloController) Build(g *engine.Engine) {
 	r := g.Group("/hello")
 	r.POST("/", u.Say())

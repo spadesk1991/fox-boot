@@ -11,9 +11,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func init() {
-	os.Mkdir("log", 0766)
-}
+//func init() {
+//	os.Mkdir("log", 0766)
+//}
 func Logger() gin.HandlerFunc {
 	logClient := logrus.New()
 
