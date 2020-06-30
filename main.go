@@ -3,20 +3,21 @@ package main
 import (
 	"LiteService/app/controllers"
 	"LiteService/app/engine"
+	"LiteService/app/service"
 	"LiteService/config"
 	"fmt"
 )
 
 func main() {
-	router := engine.NewEngine("/api/demo")
-	router.Group("/api")
-	// 加载路由
-	router.Mount(
-		controllers.NewHelloController(),
-	)
-
-	err := router.Run(fmt.Sprintf(":%d", config.Cfg.Port))
-	if err != nil {
-		panic(err)
-	}
+	prefix := "/api/demo"
+	r := engine.NewEngine()
+	r.GET("/check", func() (string, error) {
+		return "ok", nil
+	})
+	r.Group(prefix).
+		Mount(
+			controllers.NewHelloController(),
+		).
+		Registry(service.NewRegService(prefix)).
+		Run(fmt.Sprintf(":%d", config.Cfg.Port))
 }

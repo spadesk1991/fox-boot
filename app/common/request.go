@@ -8,56 +8,114 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
-func call(method, uri string, params map[string]string, body interface{}) (buff []byte, err error) {
-	url := uri
+type RQ struct {
+	method string
+	uri    string
+	header map[string]string
+	params map[string]string
+	body   io.Reader
+}
+
+func DefaultRQ() *RQ {
+	return &RQ{}
+}
+
+func (r *RQ) Uri(uri string) *RQ {
+	r.uri = uri
+	return r
+}
+
+func (r *RQ) SetHeader(header map[string]string) *RQ {
+	r.header = header
+	return r
+}
+
+func (r *RQ) SetParams(params map[string]string) *RQ {
+	r.params = params
+	return r
+}
+
+func (r *RQ) SetBody(body interface{}) *RQ {
+	var in io.Reader
+	if body != nil {
+		var bodyBf []byte
+		bodyBf, err := json.Marshal(body)
+		if err != nil {
+			panic(errors.WithStack(err))
+		}
+		in = bytes.NewBuffer(bodyBf)
+	}
+	r.body = in
+	return r
+}
+
+func (r *RQ) Post() *RQ {
+	r.method = "POST"
+	return r
+}
+
+func (r *RQ) Get() *RQ {
+	r.method = "GET"
+	return r
+}
+
+func (r *RQ) Put() *RQ {
+	r.method = "PUT"
+	return r
+}
+
+func (r *RQ) Delete() *RQ {
+	r.method = "DELETE"
+	return r
+}
+
+func (r *RQ) JsonResult(res interface{}) (err error) {
+	bf, err := r.do()
+	if err != nil {
+		return
+	}
+	json.Unmarshal(bf, &res)
+	return
+}
+func (r *RQ) StringResult() (res string, err error) {
+	bf, err := r.do()
+	if err != nil {
+		return
+	}
+	res = string(bf)
+	return
+}
+func (r *RQ) do() (buff []byte, err error) {
+	url := r.uri
 	ps := make([]string, 0)
-	if params != nil {
-		for k, v := range params {
+	// 拼接params参数
+	if r.params != nil {
+		for k, v := range r.params {
 			ps = append(ps, fmt.Sprintf("&%s=%s", k, v))
 		}
 		url += strings.Join(ps, "&")
 	}
-	var in io.Reader
-	if body != nil {
-		var bodyBf []byte
-		bodyBf, err = json.Marshal(body)
-		if err != nil {
-			return
+	request, err := http.NewRequest(r.method, url, r.body)
+	if err != nil {
+		return
+	}
+	// 设置header
+	if r.header != nil {
+		for k, v := range r.header {
+			request.Header.Set(k, v)
 		}
-		in = bytes.NewBuffer(bodyBf)
 	}
-	request, err := http.NewRequest(method, url, in)
-	if err != nil {
-		return
-	}
+
 	client := http.DefaultClient
-	r, err := client.Do(request)
-	defer r.Body.Close()
+	rs, err := client.Do(request)
 	if err != nil {
 		return
 	}
-	buff, err = ioutil.ReadAll(r.Body)
-	return
-}
-
-func Post(uri string, params map[string]string, body interface{}) (result []byte, err error) {
-	result, err = call("POST", uri, params, body)
-	return
-}
-
-func Get(uri string, params map[string]string) (result []byte, err error) {
-	result, err = call("GET", uri, params, nil)
-	return
-}
-
-func Put(uri string, params map[string]string, body interface{}) (result []byte, err error) {
-	result, err = call("PUT", uri, params, body)
-	return
-}
-
-func Delete(uri string, params map[string]string) (result []byte, err error) {
-	result, err = call("DELETE", uri, params, nil)
+	defer rs.Body.Close()
+	buff, err = ioutil.ReadAll(rs.Body)
 	return
 }

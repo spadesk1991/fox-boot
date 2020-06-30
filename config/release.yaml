@@ -6,3 +6,4 @@ redisAddr       : localhost:6379
 redisPassword   :
 redisDb         : 0
 redisTimeout    : 3600
+mongodbUri    : mongodb://localhost:27017/test

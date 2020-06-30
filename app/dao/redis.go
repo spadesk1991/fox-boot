@@ -4,7 +4,6 @@ import (
 	"LiteService/config"
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/go-redis/redis/v8"
 )
@@ -18,9 +17,6 @@ func init() {
 		DB:       config.Cfg.RedisDb,       // use default DB
 	})
 	fmt.Println(rdb.Ping(context.TODO()))
-	if os.Getenv("GIN_MODE") != "release" {
-		rdb.SlowLog(context.TODO())
-	}
 }
 
 func GetRedisDB() *redis.Client {

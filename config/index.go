@@ -14,6 +14,7 @@ type Config struct {
 	Port          int    `yaml:"port"`
 	Debug         bool   `yaml:"debug"`
 	MysqlUri      string `yaml:"mysqlUri"`
+	MongodbUri    string `yaml:"mongodbUri"`
 	RedisAddr     string `yaml:"redisAddr"`
 	RedisPassword string `yaml:"redisPassword"`
 	RedisDb       int    `yaml:"redisDb"`

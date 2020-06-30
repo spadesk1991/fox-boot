@@ -4,8 +4,6 @@ import (
 	"LiteService/app/dao"
 
 	"github.com/globalsign/mgo/bson"
-
-	"github.com/globalsign/mgo"
 )
 
 type TestService struct{}
@@ -16,20 +14,13 @@ const (
 
 // Create 插入数据
 func (t *TestService) Create(docs map[string]interface{}) error {
-	return dao.Exec(TestCollection, func(c *mgo.Collection) (e error) {
-		return c.Insert(docs)
-	})
+	return dao.Insert(TestCollection, docs)
 }
 
 func (t *TestService) list(query bson.M, res []map[string]interface{}) error {
-	return dao.Exec(TestCollection, func(c *mgo.Collection) (e error) {
-		return c.Find(query).All(&res)
-	})
+	return dao.FindAll(TestCollection, query, nil, &res)
 }
 
 func (t *TestService) Agge(query bson.M, res interface{}) error {
-	return dao.Exec(TestCollection, func(c *mgo.Collection) (e error) {
-		//c.Find(query).
-		return
-	})
+	return nil
 }
