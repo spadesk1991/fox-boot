@@ -1,9 +1,0 @@
-port            : 8000
-debug           : true
-mysqlUri        : root:123456@tcp(localhost:3306)/test?charset=utf8&parseTime=True&loc=Local
-mysqlEnableLog  : true
-redisAddr       : localhost:6379
-redisPassword   :
-redisDb         : 0
-redisTimeout    : 3600
-mongodbUri    : mongodb://localhost:27017/test

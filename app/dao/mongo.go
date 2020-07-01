@@ -1,30 +1,31 @@
 package dao
 
 import (
+	"LiteService/config"
+
 	"github.com/globalsign/mgo"
 )
 
 var s *mgo.Session
 
-const mongodb = "test"
+const mongodb = "mws"
 
 func init() {
 	var err error
-	s, err = mgo.Dial("mongodb://localhost:27017/test")
-	s.SetMode(mgo.Monotonic, true)
+	s, err = mgo.Dial(config.GetCfg().MongodbUri)
 	if err != nil {
 		panic(err)
 	}
+	s.SetMode(mgo.Monotonic, true)
 }
 
 func connect(collection string) (*mgo.Session, *mgo.Collection) {
 	ms := s.Copy()
 	c := ms.DB(mongodb).C(collection)
-	ms.SetMode(mgo.Monotonic, true)
 	return ms, c
 }
 
-func getDb() (*mgo.Session, *mgo.Database) {
+func GetMongoDB() (*mgo.Session, *mgo.Database) {
 	ms := s.Copy()
 	return ms, ms.DB(mongodb)
 }
@@ -59,7 +60,7 @@ func FindPage(collection string, page, limit int, query, selector, result interf
 	ms, c := connect(collection)
 	defer ms.Close()
 
-	return c.Find(query).Select(selector).Skip(page * limit).Limit(limit).All(result)
+	return c.Find(query).Select(selector).Skip((page - 1) * limit).Limit(limit).All(result)
 }
 
 func FindIter(collection string, query interface{}) *mgo.Iter {

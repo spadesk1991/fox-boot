@@ -3,6 +3,12 @@ package engine
 import (
 	"LiteService/app/middleware"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,7 +27,10 @@ type IUnRegistry interface {
 
 type Engine struct {
 	*gin.Engine
+	unRegistryFunc RegistryFunc
 }
+
+type RegistryFunc func()
 
 func NewEngine() *Engine {
 	e := gin.Default()
@@ -53,11 +62,11 @@ func (service *Engine) handle(httpMethod, relativePath string, handlers ...inter
 	arr := make([]gin.HandlerFunc, 0)
 	for _, handler := range handlers {
 		switch handler.(type) {
-		case func(*gin.Context):
-			arr = append(arr, handler.(func(*gin.Context)))
-		case func() (string, error):
+		case func(c *gin.Context):
+			arr = append(arr, handler.(func(c *gin.Context)))
+		case func(c *gin.Context) (string, error):
 			f := func(c *gin.Context) {
-				res, err := handler.(func() (string, error))()
+				res, err := handler.(func(c *gin.Context) (string, error))(c)
 				if err != nil {
 					panic(err)
 				}
@@ -70,9 +79,9 @@ func (service *Engine) handle(httpMethod, relativePath string, handlers ...inter
 				r.json(c)
 			}
 			arr = append(arr, f)
-		case func() (int, error):
+		case func(c *gin.Context) (int, error):
 			f := func(c *gin.Context) {
-				res, err := handler.(func() (int, error))()
+				res, err := handler.(func(c *gin.Context) (int, error))(c)
 				if err != nil {
 					panic(err)
 				}
@@ -84,9 +93,9 @@ func (service *Engine) handle(httpMethod, relativePath string, handlers ...inter
 				r.json(c)
 			}
 			arr = append(arr, f)
-		case func() (interface{}, error):
+		case func(c *gin.Context) (interface{}, error):
 			f := func(c *gin.Context) {
-				res, err := handler.(func() (interface{}, error))()
+				res, err := handler.(func(c *gin.Context) (interface{}, error))(c)
 				if err != nil {
 					panic(err)
 				}
@@ -98,9 +107,9 @@ func (service *Engine) handle(httpMethod, relativePath string, handlers ...inter
 				r.json(c)
 			}
 			arr = append(arr, f)
-		case func() (bool, error):
+		case func(c *gin.Context) (bool, error):
 			f := func(c *gin.Context) {
-				res, err := handler.(func() (bool, error))()
+				res, err := handler.(func(c *gin.Context) (bool, error))(c)
 				if err != nil {
 					panic(err)
 				}
@@ -118,7 +127,6 @@ func (service *Engine) handle(httpMethod, relativePath string, handlers ...inter
 	}
 	service.Engine.Handle(httpMethod, relativePath, arr...)
 }
-
 func (service *Engine) Group(relativePath string, handlers ...gin.HandlerFunc) *Engine {
 	service.Engine.RouterGroup = *service.Engine.Group(relativePath, handlers...)
 	return service
@@ -145,17 +153,40 @@ func (service *Engine) DELETE(relativePath string, handlers ...interface{}) {
 	service.handle(http.MethodDelete, relativePath, handlers...)
 }
 
-func (service *Engine) Registry(reg IRegistry) *Engine {
-	reg.Reg()
+func (service *Engine) Register(reg RegistryFunc) *Engine {
+	// 服务注册
+	reg()
 	return service
 }
 
-func (service *Engine) UnRegistry(unReg IUnRegistry) *Engine {
-	unReg.UnReg()
+func (service *Engine) Deregister(f RegistryFunc) *Engine {
+	service.unRegistryFunc = f
 	return service
 }
 
 func (service *Engine) Run(addr ...string) {
+	go func(service *Engine) {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
+		for {
+			s := <-c
+			logrus.Infof("get a signal %s", s.String())
+			switch s {
+			case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT:
+				logrus.Info("application exit")
+				// 服务反注册
+				if service.unRegistryFunc != nil {
+					service.unRegistryFunc()
+				}
+				time.Sleep(time.Second)
+				os.Exit(0)
+				return
+			case syscall.SIGHUP:
+			default:
+				return
+			}
+		}
+	}(service)
 	err := service.Engine.Run(addr...)
 	if err != nil {
 		panic(err)

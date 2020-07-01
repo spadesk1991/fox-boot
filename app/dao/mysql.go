@@ -13,11 +13,11 @@ var db *gorm.DB
 
 func init() {
 	var err error
-	db, err = gorm.Open("mysql", config.Cfg.MysqlUri)
+	db, err = gorm.Open("mysql", config.GetCfg().MysqlUri)
 	if err != nil {
 		panic(err)
 	}
-	if os.Getenv("GIN_MODE") != "release" { // 生产环境关闭log
+	if config.GetCfg().Gin_mode != "release" { // 生产环境关闭log
 		db.LogMode(true)
 	}
 	db.SetLogger(log.New(os.Stdout, "\r\n", 0))

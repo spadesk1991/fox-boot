@@ -1,39 +1,46 @@
 package config
 
 import (
-	"fmt"
-	"io/ioutil"
 	"os"
-
-	"gopkg.in/yaml.v2"
+	"strconv"
 )
 
-var Cfg *Config
+var cfg *Config
 
 type Config struct {
-	Port          int    `yaml:"port"`
-	Debug         bool   `yaml:"debug"`
-	MysqlUri      string `yaml:"mysqlUri"`
-	MongodbUri    string `yaml:"mongodbUri"`
-	RedisAddr     string `yaml:"redisAddr"`
-	RedisPassword string `yaml:"redisPassword"`
-	RedisDb       int    `yaml:"redisDb"`
-	RedisTimeout  int    `yaml:"redisTimeout"`
+	Prefix        string
+	Port          int
+	Gin_mode      string
+	MysqlUri      string
+	MongodbUri    string
+	RedisAddr     string
+	RedisPassword string
+	RedisDb       int
 }
 
 func init() {
-	goEnv := os.Getenv("GIN_MODE")
-	if goEnv == "" {
-		goEnv = "default"
-	}
-	//dir, _ := os.Getwd()
-	yamlFile, err := ioutil.ReadFile(fmt.Sprintf("config/%s.yaml", goEnv))
-	if err != nil {
+	if err := newConfig(); err != nil {
 		panic(err)
 	}
-	Cfg = new(Config)
-	err = yaml.Unmarshal(yamlFile, Cfg)
-	if err != nil {
-		panic(err)
+}
+
+func newConfig() (err error) {
+	cfg = new(Config)
+	if cfg.Port, err = strconv.Atoi(os.Getenv("port")); err != nil {
+		return
 	}
+	cfg.Prefix = os.Getenv("prefix")
+	cfg.MysqlUri = os.Getenv("mysqlUri")
+	cfg.MongodbUri = os.Getenv("mongodbUri")
+	cfg.Gin_mode = os.Getenv("GIN_MODE")
+	cfg.RedisAddr = os.Getenv("redisAddr")
+	cfg.RedisPassword = os.Getenv("redisPassword")
+	if cfg.RedisDb, err = strconv.Atoi(os.Getenv("redisDb")); err != nil {
+		return
+	}
+	return
+}
+
+func GetCfg() *Config {
+	return cfg
 }

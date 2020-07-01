@@ -12,9 +12,9 @@ var rdb *redis.Client
 
 func init() {
 	rdb = redis.NewClient(&redis.Options{
-		Addr:     config.Cfg.RedisAddr,
-		Password: config.Cfg.RedisPassword, // no password set
-		DB:       config.Cfg.RedisDb,       // use default DB
+		Addr:     config.GetCfg().RedisAddr,
+		Password: config.GetCfg().RedisPassword, // no password set
+		DB:       config.GetCfg().RedisDb,       // use default DB
 	})
 	fmt.Println(rdb.Ping(context.TODO()))
 }
